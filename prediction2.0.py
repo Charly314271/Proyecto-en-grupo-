@@ -23,7 +23,16 @@ print(f"📊 Datos históricos desde {df['Date'].iloc[0].date()} hasta {df['Date
 
 # ---------------------------------------Configuración---------------------------------------
 total_dias = len(df)
-dias_prediccion = 100  
+
+# Pedir al usuario cuántos días quiere simular
+try:
+    dias_prediccion = int(input("📆 ¿Cuántos días deseas simular hacia el futuro?: "))
+    if dias_prediccion <= 0:
+        raise ValueError
+except:
+    print("❌ Número de días inválido.")
+    sys.exit()
+
 precio_inicial = df['Adj Close'].iloc[-1]
 
 try:
@@ -43,7 +52,6 @@ print("\n⚙️ Ajustando modelo GARCH(1,1) y EGARCH...")
 modelo_garch = arch_model(df['Returns'] * 100, vol='EGarch', p=1, q=1)
 resultados = modelo_garch.fit(disp='off')
 
-# Proyección de volatilidad futura (para el futuro)
 volatilidad_dia_a_dia = resultados.conditional_volatility.values / 100
 
 media = df['Returns'].mean()
@@ -54,7 +62,7 @@ print(f"📉 Volatilidad dinámica proyectada (primeros 5 días): {volatilidad_d
 df_t = 4  # grados de libertad para la t-Student
 factor_volatilidad = 0.75
 factor_crisis = 3.0
-prob_crisis = 0.05  # 5% de probabilidad de crisis diaria
+prob_crisis = 0.05
 
 limite_inferior = precio_inicial * 0.3
 limite_superior = precio_inicial * 3
@@ -68,13 +76,11 @@ for i in range(n_simulaciones):
         std_dinamica = volatilidad_dia_a_dia[j] if j < len(volatilidad_dia_a_dia) else volatilidad_dia_a_dia[-1]
         std_dinamica *= factor_volatilidad
 
-        # Modo crisis aleatorio
         crisis = np.random.rand() < prob_crisis
         if crisis:
             std_dinamica *= factor_crisis
             crisis_marcadas[i, j] = True
 
-        # Simulación de retorno con t-Student
         t_sample = np.random.standard_t(df_t)
         retorno_simulado = media + std_dinamica * t_sample * np.sqrt((df_t - 2) / df_t)
 
@@ -84,10 +90,8 @@ for i in range(n_simulaciones):
         precios.append(nuevo_precio)
     todas_las_simulaciones[i] = precios
 
-# Media de precios día a día
 precios_medios = np.mean(todas_las_simulaciones, axis=0)
 
-# Fechas futuras
 ultima_fecha = df['Date'].iloc[-1]
 fechas_futuras = pd.date_range(start=ultima_fecha + pd.Timedelta(days=1), periods=dias_prediccion + 1)
 
