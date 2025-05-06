@@ -3,10 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from arch import arch_model
-import yfinance as yf
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-import matplotlib.dates as mdates
 
 # ---------------------------------------Carga de datos---------------------------------------
 try:
@@ -47,8 +44,7 @@ modelo_garch = arch_model(df['Returns'] * 100, vol='EGarch', p=1, q=1)
 resultados = modelo_garch.fit(disp='off')
 
 # Proyección de volatilidad futura (para el futuro)
-# Ahora calcularemos la volatilidad día a día
-volatilidad_dia_a_dia = resultados.conditional_volatility.values / 100  # Convertir a array de numpy
+volatilidad_dia_a_dia = resultados.conditional_volatility.values / 100
 
 media = df['Returns'].mean()
 print(f"📈 Media diaria de retornos: {media:.5f}")
@@ -72,13 +68,13 @@ for i in range(n_simulaciones):
         std_dinamica = volatilidad_dia_a_dia[j] if j < len(volatilidad_dia_a_dia) else volatilidad_dia_a_dia[-1]
         std_dinamica *= factor_volatilidad
 
-        # Modo crisis aleatorio: aumenta la volatilidad
+        # Modo crisis aleatorio
         crisis = np.random.rand() < prob_crisis
         if crisis:
             std_dinamica *= factor_crisis
-            crisis_marcadas[i, j] = True  # marcar el día de crisis
+            crisis_marcadas[i, j] = True
 
-        # Simulación de retorno con t-Student escalada
+        # Simulación de retorno con t-Student
         t_sample = np.random.standard_t(df_t)
         retorno_simulado = media + std_dinamica * t_sample * np.sqrt((df_t - 2) / df_t)
 
@@ -122,15 +118,3 @@ plt.show()
 
 # ---------------------------------------Precio final---------------------------------------
 print(f"\n📅 Precio medio predicho para el último día ({fechas_futuras[-1].date()}): ${precios_medios[-1]:.2f}")
-
-# ---------------------------------------Backtesting---------------------------------------
-# Dividir los datos históricos en un conjunto de entrenamiento y otro de prueba
-train = df['Adj Close'].iloc[:-365]
-test = df['Adj Close'].iloc[-365:]
-
-# Realizar predicciones con el modelo
-predicciones_test = precios_medios[-365:]
-
-# Evaluar precisión
-mse = mean_squared_error(test, predicciones_test)
-print(f"\n🔍 Error cuadrático medio (MSE) en el último año: {mse:.2f}")
