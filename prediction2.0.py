@@ -43,7 +43,7 @@ except:
 
 print(f"\n🛠️ Ejecutando {n_simulaciones} simulaciones de {dias_prediccion} días...")
 
-# ---------------------------------------Preprocesamiento---------------------------------------
+
 df['Returns'] = df['Adj Close'].pct_change()
 df = df.dropna()
 
@@ -116,9 +116,9 @@ plt.title(f'S&P 500: Último año + Predicción ({dias_prediccion} días, {n_sim
 plt.xlabel('Fecha')
 plt.ylabel('Precio Ajustado')
 plt.legend()
-plt.grid(True)
+plt.grid(True)  
 plt.tight_layout()
 plt.show()
 
 # ---------------------------------------Precio final---------------------------------------
-print(f"\n📅 Precio medio predicho para el último día ({fechas_futuras[-1].date()}): ${precios_medios[-1]:.2f}")
+print(f"\n📅 Precio medio predicho para el último día ({fechas_futuras[-1].date()}): ${precios_medios[-1]:.2f}")  
